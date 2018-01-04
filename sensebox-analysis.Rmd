@@ -1,7 +1,7 @@
 ---
 title: "Reproducible Environmental Observations and Analysis"
 author: "Daniel Nüst"
-date: "1/4/2018"
+date: "`r format(Sys.time(), '%Y-%m-%d %T %Z')`"
 output: html_document
 ---
 
@@ -9,14 +9,137 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Get data
+## Introduction
 
-...
+This document showcases a completely reproducible [particulate](https://en.wikipedia.org/wiki/Particulates) matter analysis.
+Starting from the used measurement devices, via software for data hosting, to the analysis and visualisation environment.
+It stands on the shoulders of communities who provide free and open resources in the spirit of [Open Science](https://en.wikipedia.org/wiki/Open_science):
 
-## Plot
+- **open hardware**: the [senseBox](https://sensebox.de/en/) project
+- **open data**: the [openSenseMap](https://opensensemap.org/) and it's [API](https://api.opensensemap.org/) provide environmental data licensed under [PDDL 1.0](http://opendatacommons.org/licenses/pddl/summary/)
+- **free and open source software**: [software by the senseBox team](https://github.com/sensebox/) to host their services and [download the data into R](https://github.com/noerw/opensensmapR), [R](https://jupyter.org/) with a large number of packages (e.g. `rmarkdown`, `sf`, `dplyr`, ...), [Project Jupyter](https://jupyter.org/), [binder](https://mybinder.org/), [Rocker](https://www.rocker-project.org/), [Docker](https://docker.com/), ... and many more
 
-```{r}
-plot(rnorm(42))
+The actual analysis is based on the [opensensmapR vignette `osem-intro`](https://noerw.github.io/opensensmapR/inst/doc/osem-intro.html).
+The code and it's environment are published, documented, and packaged to support [reproducible research](https://doi.org/10.1045/january2017-nuest).
+
+The code repository is [https://github.com/nuest/sensebox-binder](https://github.com/nuest/sensebox-binder) and the [git version hash](https://git-scm.com/docs/git-rev-parse) is `r system("git rev-parse HEAD", intern = TRUE)`.
+The repository can be opened interactively at [http://mybinder.org/v2/gh/nuest/sensebox-binder/master](http://mybinder.org/v2/gh/nuest/sensebox-binder/master).
+The code (this document as either [R Markdown](http://rmarkdown.rstudio.com/) or [Jupyter Notebook](https://nbformat.readthedocs.io/en/latest/)) and environment (a [Docker image](https://docs.docker.com/glossary/?term=image)) are archived with a [DOI](https://www.doi.org/): [`10.5281/zenodo.1135140`](https://doi.org/10.5281/zenodo.1135140).
+
+**Note**: The data is not included in the archive so this document can only be compiled as long as the openSenseMap API exists.
+
+## Analysis
+
+In the remainder of this file, code "chunks" and text are [interspersed](https://en.wikipedia.org/wiki/Literate_programming) to provide a transparent and understandable workflow.
+All code is shown, but output is sometimes hidden for the sake of clarity.
+The analysis of takes a look at _fine particulate matter measured in Germany at New Year's Eve 2018_.
+
+### Load required software
+
+```{r packages, warning=FALSE, message=FALSE}
+library("opensensmapr")
+library("dplyr")
+library("lubridate")
+library("units")
+library("sf")
+library("leaflet")
+```
+
+<span style="color: grey;">[output hidden]</span>
+
+### Exploring openSenseMap
+
+```{r explore_all, results='hide'}
+all_boxes = osem_boxes()
+analysis_date <- lubridate::as_datetime("2018-01-01 00:00:00")
+pm25_sensors = osem_boxes(
+  exposure = 'outdoor',
+  date = analysis_date, # ±4 hours
+  phenomenon = 'PM2.5',
+  model = "homeWifiFeinstaub" # redundant because of phenomenon
+)
+```
+
+The openSenseMap currently provides access to `r nrow(all_boxes)` senseBoxes of which `r nrow(pm25_sensors)` provide measurements of [PM2.5](https://www.umweltbundesamt.de/sites/default/files/medien/377/dokumente/infoblatt_feinstaub_pm2_5_en.pdf) around `r format(analysis_date, "%Y-%m-%d %T %Z")`.
+
+The following map shows the PM2.5 sensor locations.
+
+```{r plot_outdoor_feinstaub}
+plot(pm25_sensors)
+```
+
+
+### Particulates at New Year's Eve in Münster
+
+_How many senseBoxes in Münster measure PM2.5 and what are the values?_
+
+```{r muenster_boxes}
+ms <- st_sfc(st_point(c(7.62571, 51.96236)))
+st_crs(ms) <- 4326
+
+pm25_sensors_sf <- st_as_sf(pm25_sensors, remove = FALSE, agr = "identity")
+names(pm25_sensors_sf) <- c(names(pm25_sensors), "geometry")
+
+pm25_sensors_sf <- cbind(pm25_sensors_sf, dist_to_ms = st_distance(ms, pm25_sensors_sf))
+max_dist <- set_units(3, km) # km from city center
+
+ms_sensors <- pm25_sensors_sf[pm25_sensors_sf$dist_to_ms < max_dist,c("X_id", "name")]
+ms_sensors
+```
+
+Now we retrieve data for `r nrow(ms_sensors)` senseBoxes with values in the area of interest.
+
+```{r muenster_data, results='hide'}
+class(ms_sensors) <- c(class(ms_sensors), "sensebox")
+ms_data <- osem_measurements(ms_sensors, phenomenon = "PM2.5", 
+                             from = lubridate::as_datetime("2017-12-31 20:00:00"),
+                             to = lubridate::as_datetime("2018-01-01 04:00:00"))
+```
+
+We can now plot `r nrow(ms_data)` measurements.
+
+```{r muenster_plot, results='hide'}
+plot(value~createdAt, ms_data, 
+     type = "p", pch = '*', cex = 2, # new year's style
+     col = factor(ms_data$sensorId), 
+     xlab = NA, 
+     ylab = unique(ms_data$unit),
+     main = "Particulates measurements (PM2.5) on New Year 2017/2018",
+     sub = paste(nrow(ms_sensors), "stations in Münster, Germany\n",
+                 "Data by openSenseMap.org licensed under",
+                 "Public Domain Dedication and License 1.0"))
+```
+
+You can see, it was a [very "particular" celebration](http://www.dw.com/en/new-years-eve-are-fireworks-harming-the-environment/a-41957523).
+
+_Who is the record holder?_
+
+```{r top_three}
+ms_data %>% arrange(desc(value)) %>% head(n = 3)
+```
+
+**Note:** The timestamp is UTC and the local time is [CET](https://en.wikipedia.org/wiki/CET) (`UTC+1:00`).
+
+```{r top_station}
+# find the top station by its coordinates
+top_sensor <- ms_data %>% arrange(desc(value)) %>% head(n = 1) %>% .$sensorId
+top_station_coords <- ms_data %>% filter(sensorId == top_sensor) %>% select("lat", "lon") %>% slice(c(1))
+top_station <- all_boxes %>% filter(lon == top_station_coords$lon, lat == top_station_coords$lat)
+```
+
+Congratulations (?) to sensor _`r top_sensor`_ at box **`r top_station$name`** for holding the record values just after the new year started.
+Where is this box?
+
+```{r top_station_map}
+fireworks_icon <- makeIcon(
+  # icon source: https://commons.wikimedia.org/wiki/File:Fireworks_2.png
+  iconUrl = "320px-Fireworks_2.png",
+  iconWidth = 160, iconHeight = 94)
+
+leaflet(data = top_station) %>% 
+  addTiles() %>%
+  addMarkers(~lon, ~lat, popup = ~as.character(name), label = ~as.character(name),
+             icon = fireworks_icon)
 ```
 
 ## License
@@ -24,3 +147,9 @@ plot(rnorm(42))
 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" />
 
 This document is licensed under a [Creative Commons Attribution 4.0 International ](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
+
+## Metadata
+
+```{r metadata}
+sessionInfo()
+```

@@ -26,3 +26,7 @@ vignettes/*.pdf
 .local
 .rstudio
 pages/
+.ipynb_checkpoints
+.ipython
+.jupyter
+sensebox-analysis.html

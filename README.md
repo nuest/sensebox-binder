@@ -24,6 +24,14 @@ docker run -p 8888:8888 -v $(pwd):/home/rstudio sensebinder
 It is strongly recommended to use this setup to get RStudio, and _not edit the R Markdown file locally_, because working in the container means a controlled environment and the above approach is what happens on BinderHub.
 To install additional packages, use `install.R`.
 
+## Tipps
+
+To create both R Markdown and Jupyter Notebook the following [notedown](https://github.com/aaren/notedown) can help create a notebook file for manual adjustments:
+
+```bash
+notedown sensebox-analysis.Rmd --knit --nomagic > output.ipynb
+```
+
 ## License
 
 This project is licensed under Apache License, Version 2.0, see file LICENSE.

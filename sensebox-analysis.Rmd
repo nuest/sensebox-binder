@@ -1,0 +1,21 @@
+---
+title: "Reproducible Environmental Observations and Analysis"
+author: "Daniel Nüst"
+date: "1/4/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Get data
+
+...
+
+## Plot
+
+```{r}
+plot(rnorm(42))
+```
+

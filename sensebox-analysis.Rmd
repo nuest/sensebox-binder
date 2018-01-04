@@ -50,9 +50,9 @@ library("leaflet")
 ### Exploring openSenseMap
 
 ```{r explore_all, results='hide'}
-all_boxes = osem_boxes()
+all_boxes <- osem_boxes()
 analysis_date <- lubridate::as_datetime("2018-01-01 00:00:00")
-pm25_sensors = osem_boxes(
+pm25_boxes <- osem_boxes(
   exposure = 'outdoor',
   date = analysis_date, # ±4 hours
   phenomenon = 'PM2.5',
@@ -60,12 +60,12 @@ pm25_sensors = osem_boxes(
 )
 ```
 
-The openSenseMap currently provides access to `r nrow(all_boxes)` senseBoxes of which `r nrow(pm25_sensors)` provide measurements of [PM2.5](https://www.umweltbundesamt.de/sites/default/files/medien/377/dokumente/infoblatt_feinstaub_pm2_5_en.pdf) around `r format(analysis_date, "%Y-%m-%d %T %Z")`.
+The openSenseMap currently provides access to `r nrow(all_boxes)` senseBoxes of which `r nrow(pm25_boxes)` provide measurements of [PM2.5](https://www.umweltbundesamt.de/sites/default/files/medien/377/dokumente/infoblatt_feinstaub_pm2_5_en.pdf) around `r format(analysis_date, "%Y-%m-%d %T %Z")`.
 
 The following map shows the PM2.5 sensor locations.
 
 ```{r plot_outdoor_feinstaub}
-plot(pm25_sensors)
+plot(pm25_boxes)
 ```
 
 
@@ -77,13 +77,13 @@ _How many senseBoxes in Münster measure PM2.5 and what are the values?_
 ms <- st_sfc(st_point(c(7.62571, 51.96236)))
 st_crs(ms) <- 4326
 
-pm25_sensors_sf <- st_as_sf(pm25_sensors, remove = FALSE, agr = "identity")
-names(pm25_sensors_sf) <- c(names(pm25_sensors), "geometry")
+pm25_boxes_sf <- st_as_sf(pm25_boxes, remove = FALSE, agr = "identity")
+names(pm25_boxes_sf) <- c(names(pm25_boxes), "geometry")
 
-pm25_sensors_sf <- cbind(pm25_sensors_sf, dist_to_ms = st_distance(ms, pm25_sensors_sf))
+pm25_boxes_sf <- cbind(pm25_boxes_sf, dist_to_ms = st_distance(ms, pm25_boxes_sf))
 max_dist <- set_units(3, km) # km from city center
 
-ms_sensors <- pm25_sensors_sf[pm25_sensors_sf$dist_to_ms < max_dist,c("X_id", "name")]
+ms_sensors <- pm25_boxes_sf[pm25_boxes_sf$dist_to_ms < max_dist,c("X_id", "name")]
 ms_sensors
 ```
 
@@ -120,23 +120,23 @@ ms_data %>% arrange(desc(value)) %>% head(n = 3)
 
 **Note:** The timestamp is UTC and the local time is [CET](https://en.wikipedia.org/wiki/CET) (`UTC+1:00`).
 
-```{r top_station}
+```{r top_box}
 # find the top station by its coordinates
 top_sensor <- ms_data %>% arrange(desc(value)) %>% head(n = 1) %>% .$sensorId
-top_station_coords <- ms_data %>% filter(sensorId == top_sensor) %>% select("lat", "lon") %>% slice(c(1))
-top_station <- all_boxes %>% filter(lon == top_station_coords$lon, lat == top_station_coords$lat)
+top_box_coords <- ms_data %>% filter(sensorId == top_sensor) %>% select("lat", "lon") %>% slice(c(1))
+top_box <- all_boxes %>% filter(lon == top_box_coords$lon, lat == top_box_coords$lat)
 ```
 
-Congratulations (?) to sensor _`r top_sensor`_ at box **`r top_station$name`** for holding the record values just after the new year started.
+Congratulations (?) to sensor _`r top_sensor`_ at box **`r top_box$name`** for holding the record values just after the new year started.
 Where is this box?
 
-```{r top_station_map}
+```{r top_box_map}
 fireworks_icon <- makeIcon(
   # icon source: https://commons.wikimedia.org/wiki/File:Fireworks_2.png
   iconUrl = "320px-Fireworks_2.png",
   iconWidth = 160, iconHeight = 94)
 
-leaflet(data = top_station) %>% 
+leaflet(data = top_box) %>% 
   addTiles() %>%
   addMarkers(~lon, ~lat, popup = ~as.character(name), label = ~as.character(name),
              icon = fireworks_icon)

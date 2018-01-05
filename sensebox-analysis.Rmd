@@ -142,6 +142,20 @@ leaflet(data = top_box) %>%
              icon = fireworks_icon)
 ```
 
+## Conclusion
+
+This document creates a reproducible workflow of open data from a public API.
+It leverages software to create a transparent analysis, which can be easily opened, investigated, and even developed further with a web browser by opening the public code repository on a free cloud platform.
+To increase reproducibility, the data is cached manually as CSV files (i.e. text-based data format) and stored next to the analysis file.
+A use may adjust this workflow to her own needs, like different location or time period, by adjust the R code and deleting the data files.
+In case the exploration platform ceases to exist, users may still recreate the environment themselves based on the files in the code repository.
+A snapshot of the files from the code repository, i.e. data, code, and runtime environment (as a Docker image) are stored in a reliable data repository.
+While the manual workflow of building the image and running it is very likely to work in the future, the archived image captures the exact version of the software the original author used.
+
+The presented solution might seem complex.
+But it caters to many different levels of expertise (one-click open in browser vs. self-building of images and local inspection) and has several fail-safes (binder may disappear, GitHub repository may be lost, Docker may stop working).
+The additional work is much outweighed by the advantages in transparency and openness.
+
 ## License
 
 <img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" />

@@ -31,7 +31,7 @@ The code (this document as either [R Markdown](http://rmarkdown.rstudio.com/) or
 ## Analysis
 
 In the remainder of this file, code "chunks" and text are [interspersed](https://en.wikipedia.org/wiki/Literate_programming) to provide a transparent and understandable workflow.
-All code is shown, but output is sometimes hidden for the sake of clarity.
+
 The analysis of takes a look at _fine particulate matter measured in Germany at New Year's Eve 2018_.
 
 ### Load required software
@@ -49,7 +49,7 @@ library("leaflet")
 
 ### Exploring openSenseMap
 
-```{r explore_all, results='hide'}
+```{r explore_all}
 all_boxes <- osem_boxes()
 analysis_date <- lubridate::as_datetime("2018-01-01 00:00:00")
 pm25_boxes <- osem_boxes(
@@ -89,7 +89,7 @@ ms_sensors
 
 Now we retrieve data for `r nrow(ms_sensors)` senseBoxes with values in the area of interest.
 
-```{r muenster_data, results='hide'}
+```{r muenster_data}
 class(ms_sensors) <- c(class(ms_sensors), "sensebox")
 ms_data <- osem_measurements(ms_sensors, phenomenon = "PM2.5", 
                              from = lubridate::as_datetime("2017-12-31 20:00:00"),
@@ -98,7 +98,7 @@ ms_data <- osem_measurements(ms_sensors, phenomenon = "PM2.5",
 
 We can now plot `r nrow(ms_data)` measurements.
 
-```{r muenster_plot, results='hide'}
+```{r muenster_plot}
 plot(value~createdAt, ms_data, 
      type = "p", pch = '*', cex = 2, # new year's style
      col = factor(ms_data$sensorId), 

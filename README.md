@@ -18,12 +18,12 @@ docker build --tag sensebinder .
 docker run -p 8888:8888 -v $(pwd):/home/rstudio sensebinder
 ```
 
-You are now shown a login link to the Jupyter Notebook, similar to `http://0.0.0.0:8888/?token=bd3fc8b1176293170965e7ce613f5fbfd7a64733f312c34a` but with a different token.
+You are now shown a login link to the Jupyter Notebook start page, similar to `http://0.0.0.0:8888/?token=bd3fc8b1176293170965e7ce613f5fbfd7a64733f312c34a` but with a different token.
 Open this link in your browser and continue with ["Open analysis"](#open-analysis).
 
 ## Open analysis
 
-The **main workflow** is available both as an R Markdown document (primary) and a Jupyter Notebook using an R kernel.
+The **main workflow** is available both as an [R Markdown](http://rmarkdown.rstudio.com/) document (primary) and a [Jupyter Notebook](https://nbformat.readthedocs.io/en/latest/) (automatic conversion) using an R kernel.
 
 To open the **R Markdown document**, click on "new" in the top right, and at "RStudio Session" in the pop-up menu.
 This will start a new browser tab with an RStudio session.
@@ -33,6 +33,7 @@ Now click on the ["Knit" button](http://rmarkdown.rstudio.com/authoring_quick_to
 For a quick preview, the HTML output of the R Markdown document is also rendered by [Travis CI](http://travis-ci.org/) (see configuration in `.travis.yml`) and available at [https://nuest.github.io/sensebox-binder/sensebox-analysis.html](https://nuest.github.io/sensebox-binder/sensebox-analysis.html).
 
 To open the **Jupyter Notebook**, click on the notebook file `sensebox-analysis.ipynb` on the Jupyter start page.
+The Jupyter Notebook is automatically updated when rendering the R Markdown document.
 
 ## Edit analysis
 

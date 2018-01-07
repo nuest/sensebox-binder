@@ -83,17 +83,19 @@ names(pm25_boxes_sf) <- c(names(pm25_boxes), "geometry")
 pm25_boxes_sf <- cbind(pm25_boxes_sf, dist_to_ms = st_distance(ms, pm25_boxes_sf))
 max_dist <- set_units(3, km) # km from city center
 
-ms_sensors <- pm25_boxes_sf[pm25_boxes_sf$dist_to_ms < max_dist,c("X_id", "name")]
-ms_sensors
+ms_boxes <- pm25_boxes_sf[pm25_boxes_sf$dist_to_ms < max_dist,c("X_id", "name")]
+ms_boxes
 ```
 
-Now we retrieve data for `r nrow(ms_sensors)` senseBoxes with values in the area of interest.
+Now we retrieve data for `r nrow(ms_boxes)` senseBoxes with values in the area of interest.
 
 ```{r muenster_data}
-class(ms_sensors) <- c(class(ms_sensors), "sensebox")
-ms_data <- osem_measurements(ms_sensors, phenomenon = "PM2.5", 
+class(ms_boxes) <- c(class(ms_boxes), "sensebox")
+ms_data <- osem_measurements(ms_boxes, phenomenon = "PM2.5", 
                              from = lubridate::as_datetime("2017-12-31 20:00:00"),
                              to = lubridate::as_datetime("2018-01-01 04:00:00"))
+summary(ms_data %>% 
+                select(value,createdAt,sensorId,unit))
 ```
 
 We can now plot `r nrow(ms_data)` measurements.
@@ -105,7 +107,7 @@ plot(value~createdAt, ms_data,
      xlab = NA, 
      ylab = unique(ms_data$unit),
      main = "Particulates measurements (PM2.5) on New Year 2017/2018",
-     sub = paste(nrow(ms_sensors), "stations in Münster, Germany\n",
+     sub = paste(nrow(ms_boxes), "stations in Münster, Germany\n",
                  "Data by openSenseMap.org licensed under",
                  "Public Domain Dedication and License 1.0"))
 ```
@@ -115,7 +117,11 @@ You can see, it was a [very "particular" celebration](http://www.dw.com/en/new-y
 _Who is the record holder?_
 
 ```{r top_three}
-ms_data %>% arrange(desc(value)) %>% head(n = 3)
+top_three <- ms_data %>% 
+  arrange(desc(value)) %>% 
+  head(n = 3)
+knitr::kable(x = top_three,
+             caption = "Top 3 measurements")
 ```
 
 **Note:** The timestamp is UTC and the local time is [CET](https://en.wikipedia.org/wiki/CET) (`UTC+1:00`).
@@ -125,10 +131,22 @@ ms_data %>% arrange(desc(value)) %>% head(n = 3)
 top_sensor <- ms_data %>% arrange(desc(value)) %>% head(n = 1) %>% .$sensorId
 top_box_coords <- ms_data %>% filter(sensorId == top_sensor) %>% select("lat", "lon") %>% slice(c(1))
 top_box <- all_boxes %>% filter(lon == top_box_coords$lon, lat == top_box_coords$lat)
+
+knitr::kable(data.frame(top_sensor, top_box$name),
+             col.names = c("Top sensor identifier", "Top box name"))
 ```
 
 Congratulations (?) to sensor _`r top_sensor`_ at box **`r top_box$name`** for holding the record values just after the new year started.
-Where is this box?
+
+_Where is the record holding box?_
+
+**Static plot**:
+
+```{r top_box_plot}
+plot(top_box)
+```
+
+**Interactive map** <span style="color: grey;">[Does not work in Jupyter Notebook]</span>:
 
 ```{r top_box_map}
 fireworks_icon <- makeIcon(
@@ -140,6 +158,17 @@ leaflet(data = top_box) %>%
   addTiles() %>%
   addMarkers(~lon, ~lat, popup = ~as.character(name), label = ~as.character(name),
              icon = fireworks_icon)
+```
+
+## Jupyter Notebook conversion
+
+A converted version of this file can in Jupyter Notebook format is automatically created with each rendering using [`ipyrmd`](https://pypi.python.org/pypi/ipyrmd/0.4.3).
+`ipyrmd` is installed with other dependencies in the file `install.R`.
+The Jupyter Notebook is intended to increase accessability for users unfamiliar with R Markdown.
+The automatic conversion does not handle code statements within sentences.
+
+```{bash}
+ipyrmd --to ipynb --from Rmd -y -o sensebox-analysis.ipynb sensebox-analysis.Rmd
 ```
 
 ## Conclusion

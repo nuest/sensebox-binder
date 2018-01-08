@@ -86,14 +86,13 @@ To install additional packages, use `install.R` and re-build the container (see 
 The following steps were used to create the archivable version of the workflow stored on Zenodo (cf. [Import runtime](#import-runtime)).
 
 First create a [Local build](#local-build).
-Then export 
+Then export the container using it's name with the `docker image save` command into a [compressed](https://en.wikipedia.org/wiki/Gzip) [tarball](https://en.wikipedia.org/wiki/Tar_(computing)):
 
 ```bash
-# check the image exists
-docker image ls --filter "reference=sensebinder"
-# create the compressed tarball
 docker image save sensebinder:latest | gzip -c > sensebox-binder.tar.gz
 ```
+
+The created image contains the runtime environment of the workflow (R, Jupyter Notebook, libraries & packages) as well as files from this directory, including the [git repository](https://en.wikipedia.org/wiki/Git).
 
 ## Contact
 

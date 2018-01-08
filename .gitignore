@@ -30,3 +30,5 @@ pages/
 .ipython
 .jupyter
 sensebox-analysis.html
+
+sensebox-binder\.zip

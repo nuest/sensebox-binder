@@ -4,22 +4,59 @@
 
 _A reproducible analysis of environmental data - from hardware to plot!_
 
+The analysis can be explored in three ways, all of which offer full transparency and provide an interactive environment to [study and adopt](#edit-analysis) code and data.
+
+1. [One-click execution](#one-click-execution)
+1. [Local build and execution](#local-build)
+1. [Import runtime and local execution](#import-runtime)
+
 ## One-click execution
 
 This repo can be opened directly in [Binder](https://mybinder.org/) thanks to [this example](https://github.com/binder-examples/dockerfile-rstudio) and [Rocker](https://github.com/rocker-org/binder) by clicking on the "launch binder" button above.
 
-## Local execution
+## Local build
 
-The following commands build a Docker image from the `Dockerfile` and the runs it, which is roughly what happens when launching this repository in Binder.
-The current directory (`$(pwd)`) is mounted to the container's default working directory (`/home/rstudio`) and the Jupyter port (`8888`) is exposed to the host computer.
+The following commands build a Docker image from the `Dockerfile` and the runs it on your local machine.
+Therefor you need [Docker](http://docker.com/).
+The steps are roughly what happens when launching this repository in Binder.
 
 ```bash
 docker build --tag sensebinder .
+```
+
+Continue with [Local execution](#local-execution).
+
+## Import runtime
+
+[Zenodo](https://en.wikipedia.org/wiki/Zenodo) is a public research data repository.
+It provides a secure place to deposit datasets and makes them citable by providing a [DOI](https://en.wikipedia.org/wiki/Digital_object_identifier).
+
+This workflow relies on several online resources and tools that might disappear or stop working (GitHub, openseSenseMap-API, Docker, ...), but Zenodo is much less likely to vanish.
+
+Download all files from [https://doi.org/10.5281/zenodo.1135140](https://doi.org/10.5281/zenodo.1135140) and put them in one directory.
+
+Import the runtime from the compressed tarball (cf. [Export runtime](#export-runtime)).
+
+```bash
+docker image load --input sensebox-binder.tar.gz
+```
+
+Continue with [Local execution](#local-execution).
+
+## Local execution
+
+You have now either build or loaded a Docker image.
+Now start a Docker container using the image with the following command.
+
+```bash
 docker run -p 8888:8888 -v $(pwd):/home/rstudio sensebinder
 ```
 
-You are now shown a login link to the Jupyter Notebook start page, similar to `http://0.0.0.0:8888/?token=bd3fc8b1176293170965e7ce613f5fbfd7a64733f312c34a` but with a different token.
-Open this link in your browser and continue with ["Open analysis"](#open-analysis).
+The current directory (`$(pwd)` for Ubuntu/Debian; on Windows or Mac please manually put in the local path) is mounted to the container's default working directory (`/home/rstudio`) and the Jupyter port (`8888`) is exposed to the host computer.
+You may leave out the mount, but changes are not persisted to the host machine then.
+
+The output includes a login link to the Jupyter Notebook start page, similar to `http://0.0.0.0:8888/?token=bd3fc8b1176293170965e7ce613f5fbfd7a64733f312c34a` but with a different token.
+Open this link in your browser and continue with [Open analysis](#open-analysis).
 
 ## Open analysis
 
@@ -40,11 +77,25 @@ The Jupyter Notebook is automatically updated when rendering the R Markdown docu
 Because the host directory is mounted into the container, all changes to the workflows saved in Jupyter or RStudio are persisted to your local disc.
 
 It is strongly recommended to use only the containerised browser version of RStudio, although the R Markdown document could easily be edited with the desktop version, because working in the container ensures a controlled environment.
-To install additional packages, use `install.R` and re-build the container (see ["Local execution"](#local-execution)).
+To install additional packages, use `install.R` and re-build the container (see [Local execution](#local-execution)).
 
 ## Export runtime
 
-For the ...
+The following steps were used to create the archivable version of the workflow stored on Zenodo (cf. [Import runtime](#import-runtime)).
+
+First create a [Local build](#local-build).
+Then export 
+
+```bash
+# check the image exists
+docker image ls --filter "reference=sensebinder"
+# create the compressed tarball
+docker image save sensebinder:latest | gzip -c > sensebox-binder.tar.gz
+```
+
+## Contact
+
+[Daniel Nüst](https://nordholmen.net), [@nordholmen](https://twitter.com/nordholmen), [https://orcid.org/0000-0002-0024-5046](https://orcid.org/0000-0002-0024-5046)
 
 ## License
 

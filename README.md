@@ -14,6 +14,8 @@ The analysis can be explored in three ways, all of which offer full transparency
 
 This repo can be opened directly in [Binder](https://mybinder.org/) thanks to [this example](https://github.com/binder-examples/dockerfile-rstudio) and [Rocker](https://github.com/rocker-org/binder) by clicking on the "launch binder" button above.
 
+[![screencast of senseBox-Binder analysis in RStudio running on mybinder.org](https://media.giphy.com/media/l49JRjO65S0WQ1Kyk/giphy.gif)](https://media.giphy.com/media/l49JRjO65S0WQ1Kyk/giphy.gif)
+
 ## Local build
 
 The following commands build a Docker image from the `Dockerfile` and the runs it on your local machine.

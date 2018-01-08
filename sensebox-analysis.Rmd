@@ -16,7 +16,7 @@ Starting from the used measurement devices, via software for data hosting, to th
 It stands on the shoulders of communities who provide free and open resources in the spirit of [Open Science](https://en.wikipedia.org/wiki/Open_science):
 
 - **open hardware**: the [senseBox](https://sensebox.de/en/) project
-- **open data**: the [openSenseMap](https://opensensemap.org/) and it's [API](https://api.opensensemap.org/) provide environmental data licensed under [PDDL 1.0](http://opendatacommons.org/licenses/pddl/summary/)
+- **open data**: the [openSenseMap](https://opensensemap.org/) and its [API](https://api.opensensemap.org/) provide environmental data licensed under [PDDL 1.0](http://opendatacommons.org/licenses/pddl/summary/)
 - **free and open source software**: [software by the senseBox team](https://github.com/sensebox/) to host their services and [download the data into R](https://github.com/noerw/opensensmapR), [R](https://jupyter.org/) with a large number of packages (e.g. `rmarkdown`, `sf`, `dplyr`, ...), [Project Jupyter](https://jupyter.org/), [binder](https://mybinder.org/), [Rocker](https://www.rocker-project.org/), [Docker](https://docker.com/), ... and many more
 
 The actual analysis is based on the [opensensmapR vignette `osem-intro`](https://noerw.github.io/opensensmapR/inst/doc/osem-intro.html).
@@ -24,9 +24,7 @@ The code and it's environment are published, documented, and packaged to support
 
 The code repository is [https://github.com/nuest/sensebox-binder](https://github.com/nuest/sensebox-binder) and the [git version hash](https://git-scm.com/docs/git-rev-parse) is `r system("git rev-parse HEAD", intern = TRUE)`.
 The repository can be opened interactively at [http://mybinder.org/v2/gh/nuest/sensebox-binder/master](http://mybinder.org/v2/gh/nuest/sensebox-binder/master).
-The code (this document as either [R Markdown](http://rmarkdown.rstudio.com/) or [Jupyter Notebook](https://nbformat.readthedocs.io/en/latest/)) and environment (a [Docker image](https://docs.docker.com/glossary/?term=image)) are archived with a [DOI](https://www.doi.org/): [`10.5281/zenodo.1135140`](https://doi.org/10.5281/zenodo.1135140).
-
-**Note**: The data is not included in the archive so this document can only be compiled as long as the openSenseMap API exists.
+The code (this document as either [R Markdown](http://rmarkdown.rstudio.com/) or [Jupyter Notebook](https://nbformat.readthedocs.io/en/latest/)) and environment (a [Docker image](https://docs.docker.com/glossary/?term=image)) are archived with a [DOI](https://en.wikipedia.org/wiki/Digital_object_identifier): [`10.5281/zenodo.1135140`](https://doi.org/10.5281/zenodo.1135140).
 
 ## Analysis
 
@@ -34,7 +32,11 @@ In the remainder of this file, code "chunks" and text are [interspersed](https:/
 
 The analysis of takes a look at _fine particulate matter measured in Germany at New Year's Eve 2018_.
 
-### Load required software
+**Note**: The data is included in the archive as a backup in [JSON](https://en.wikipedia.org/wiki/JSON) format.
+This document by default can only be compiled as long as the openSenseMap API is available.
+To use local backup data, set the variable `online` to `FALSE` in the second code chunk.
+
+### Load required libraries
 
 ```{r packages, warning=FALSE, message=FALSE}
 library("opensensmapr")
@@ -43,22 +45,60 @@ library("lubridate")
 library("units")
 library("sf")
 library("leaflet")
+library("readr")
+library("jsonlite")
+library("here")
 ```
 
 <span style="color: grey;">[output hidden]</span>
 
-### Exploring openSenseMap
+### Load data on senseBoxes
 
-```{r explore_all}
-all_boxes <- osem_boxes()
+```{r load_box_data}
+online <- TRUE # access online API or use local data backup?
+
 analysis_date <- lubridate::as_datetime("2018-01-01 00:00:00")
-pm25_boxes <- osem_boxes(
-  exposure = 'outdoor',
-  date = analysis_date, # ±4 hours
-  phenomenon = 'PM2.5',
-  model = "homeWifiFeinstaub" # redundant because of phenomenon
-)
+
+if(online) {
+  # retrieve data from openSenseMap API
+  all_boxes <- osem_boxes()
+  pm25_boxes <- osem_boxes(
+    exposure = 'outdoor',
+    date = analysis_date, # ±4 hours
+    phenomenon = 'PM2.5',
+    model = "homeWifiFeinstaub" # redundant because of phenomenon
+  )
+  
+  # update local data
+  all_json <- toJSON(all_boxes, digits = NA, pretty = TRUE)
+  write(all_json, file = here("data/all_boxes.json"))
+  pm25_json <- toJSON(pm25_boxes, digits = NA, pretty = TRUE)
+  write(pm25_json, file = here("data/pm25_boxes.json"))
+} else {
+  # load data from file and fix column types
+  all_boxes_file <- fromJSON(here("data/all_boxes.json"))
+  all_boxes <- type_convert(all_boxes_file,
+                                  col_types = cols(
+                                    exposure = col_factor(levels = NULL),
+                                    model = col_factor(levels = NULL),
+                                    grouptag = col_factor(levels = NULL)))
+  class(all_boxes) <- c("sensebox", class(all_boxes))
+  pm25_boxes_file <- fromJSON(here("data/pm25_boxes.json"))
+  pm25_boxes <- type_convert(pm25_boxes_file,
+                                  col_types = cols(
+                                    exposure = col_factor(levels = NULL),
+                                    model = col_factor(levels = NULL),
+                                    grouptag = col_factor(levels = NULL)))
+  class(pm25_boxes) <- c("sensebox", class(pm25_boxes))
+}
+
+knitr::kable(data.frame(nrow(all_boxes), nrow(pm25_boxes)),
+             col.names = c(
+               "# senseBoxes",
+               paste("# senseBoxes with PM2.5 measurements around", format(analysis_date, "%Y-%m-%d %T %Z"))))
 ```
+
+### Exploring openSenseMap
 
 The openSenseMap currently provides access to `r nrow(all_boxes)` senseBoxes of which `r nrow(pm25_boxes)` provide measurements of [PM2.5](https://www.umweltbundesamt.de/sites/default/files/medien/377/dokumente/infoblatt_feinstaub_pm2_5_en.pdf) around `r format(analysis_date, "%Y-%m-%d %T %Z")`.
 
@@ -71,7 +111,7 @@ plot(pm25_boxes)
 
 ### Particulates at New Year's Eve in Münster
 
-_How many senseBoxes in Münster measure PM2.5 and what are the values?_
+_How many senseBoxes in Münster measure PM2.5?_
 
 ```{r muenster_boxes}
 ms <- st_sfc(st_point(c(7.62571, 51.96236)))
@@ -84,16 +124,31 @@ pm25_boxes_sf <- cbind(pm25_boxes_sf, dist_to_ms = st_distance(ms, pm25_boxes_sf
 max_dist <- set_units(3, km) # km from city center
 
 ms_boxes <- pm25_boxes_sf[pm25_boxes_sf$dist_to_ms < max_dist,c("X_id", "name")]
+class(ms_boxes) <- c(class(ms_boxes), "sensebox")
 ms_boxes
 ```
 
 Now we retrieve data for `r nrow(ms_boxes)` senseBoxes with values in the area of interest.
 
 ```{r muenster_data}
-class(ms_boxes) <- c(class(ms_boxes), "sensebox")
-ms_data <- osem_measurements(ms_boxes, phenomenon = "PM2.5", 
+if(online) {
+  ms_data <- osem_measurements(ms_boxes, phenomenon = "PM2.5", 
                              from = lubridate::as_datetime("2017-12-31 20:00:00"),
                              to = lubridate::as_datetime("2018-01-01 04:00:00"))
+  
+  # update local data
+  data_json <- toJSON(ms_data, digits = NA, pretty = TRUE)
+  write(data_json, file = here("data/ms_data.json"))
+} else {
+  # load data from file and fix column types
+  ms_data_file <- fromJSON(here("data/ms_data.json"))
+  ms_data <- type_convert(ms_data_file,
+                                  col_types = cols(
+                                    sensorId = col_factor(levels = NULL),
+                                    unit = col_factor(levels = NULL)))
+  class(all_boxes) <- c("sensebox", class(ms_data))
+}
+
 summary(ms_data %>% 
                 select(value,createdAt,sensorId,unit))
 ```
@@ -167,7 +222,7 @@ A converted version of this file can in Jupyter Notebook format is automatically
 The Jupyter Notebook is intended to increase accessability for users unfamiliar with R Markdown.
 The automatic conversion does not handle code statements within sentences.
 
-```{bash}
+```{bash convert_to_ipynb}
 ipyrmd --to ipynb --from Rmd -y -o sensebox-analysis.ipynb sensebox-analysis.Rmd
 ```
 
@@ -194,5 +249,5 @@ This document is licensed under a [Creative Commons Attribution 4.0 Internationa
 ## Metadata
 
 ```{r metadata}
-sessionInfo()
+devtools::session_info()
 ```

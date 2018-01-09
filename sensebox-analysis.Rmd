@@ -15,7 +15,7 @@ This document showcases a completely reproducible [particulate](https://en.wikip
 Starting from the used measurement devices, via software for data hosting, to the analysis and visualisation environment.
 It stands on the shoulders of communities who provide free and open resources in the spirit of [Open Science](https://en.wikipedia.org/wiki/Open_science):
 
-- **open hardware**: the [senseBox](https://sensebox.de/en/) project
+- **open hardware**: the [senseBox](https://sensebox.de/en/) project, [Arduino](https://en.wikipedia.org/wiki/Arduino)
 - **open data**: the [openSenseMap](https://opensensemap.org/) and its [API](https://api.opensensemap.org/) provide environmental data licensed under [PDDL 1.0](http://opendatacommons.org/licenses/pddl/summary/)
 - **free and open source software**: [software by the senseBox team](https://github.com/sensebox/) to host their services and [download the data into R](https://github.com/noerw/opensensmapR), [R](https://jupyter.org/) with a large number of packages (e.g. `rmarkdown`, `sf`, `dplyr`, ...), [Project Jupyter](https://jupyter.org/), [binder](https://mybinder.org/), [Rocker](https://www.rocker-project.org/), [Docker](https://docker.com/), ... and many more
 
@@ -220,7 +220,8 @@ _Where are the record holding boxes?_
 **Static plot**
 
 ```{r top_box_plot}
-top_boxes_sf <- top_boxes %>% filter(value == max(top_boxes$value)) %>%
+top_boxes_sf <- top_boxes %>% 
+  filter(value == max(top_boxes$value)) %>%
   st_as_sf(coords = c('lon', 'lat'), crs = 4326)
 bbox <- sf::st_bbox(top_boxes_sf)
 

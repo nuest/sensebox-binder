@@ -96,11 +96,12 @@ The created image contains the runtime environment of the workflow (R, Jupyter N
 
 ## Create release
 
-1. Create a [Local build](#local-build) and start a [Local execution](#local-execution)
+1. Create a [Local build](#local-build) and start a [Local execution](#local-execution) without mounting the local files
 1. Make sure the R Markdown document renders correctly with `online <- FALSE`, then set `online <- TRUE`
 1. Render the R Markdown document
 1. Commit all changes to the repository
 1. Add a tag `v1` to the repository and push it to GitHub
+1. Create a [Local build](#local-build) (to have the latest commit and tag in the repository)
 1. [Export runtime]("#export-runtime")
 1. Create ZIP file with ``
 1. Upload to Zenodo, adding the same version tag

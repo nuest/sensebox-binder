@@ -1,3 +1,13 @@
 pages
 kitematic
 sensebox-binder.tar.gz
+sensebox-binder\.zip
+.config
+.cache
+.Rproj.user
+.local
+.rstudio
+pages/
+.ipynb_checkpoints
+.ipython
+.jupyter

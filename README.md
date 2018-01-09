@@ -103,7 +103,7 @@ The created image contains the runtime environment of the workflow (R, Jupyter N
 1. Start a [Local execution](#local-execution) with mounting the local files to render the R Markdown document to HTML;make sure the hash in the HTML file is the one with the version tag
 1. Create a [Local build](#local-build) (to have the latest commit and tag in the repository)
 1. [Export runtime]("#export-runtime")
-1. Create ZIP file with `zip -r sensebox-binder.zip .git data .dockerignore .gitignore .travis.yml 320px-Fireworks_2.jpg Dockerfile install.R LICENSE README.md sensebox-analysis.* sensebox-binder.Rproj sensebox-binder.tar.gz`
+1. Create ZIP file with `zip -1 -r sensebox-binder.zip .git data .dockerignore .gitignore .travis.yml 320px-Fireworks_2.jpg Dockerfile install.R LICENSE README.md sensebox-analysis.* sensebox-binder.Rproj sensebox-binder.tar.gz` (fast compression, the tarball is already compressed and the other file sizes are negligible)
 1. Upload to Zenodo, adding the same version tag
 
 ## Contact

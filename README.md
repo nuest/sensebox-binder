@@ -94,6 +94,17 @@ docker image save sensebinder:latest | gzip -c > sensebox-binder.tar.gz
 
 The created image contains the runtime environment of the workflow (R, Jupyter Notebook, libraries & packages) as well as files from this directory, including the [git repository](https://en.wikipedia.org/wiki/Git).
 
+## Create release
+
+1. Create a [Local build](#local-build) and start a [Local execution](#local-execution)
+1. Make sure the R Markdown document renders correctly with `online <- FALSE`, then set `online <- TRUE`
+1. Render the R Markdown document
+1. Commit all changes to the repository
+1. Add a tag `v1` to the repository and push it to GitHub
+1. [Export runtime]("#export-runtime")
+1. Create ZIP file with ``
+1. Upload to Zenodo, adding the same version tag
+
 ## Contact
 
 [Daniel Nüst](https://nordholmen.net), [@nordholmen](https://twitter.com/nordholmen), [https://orcid.org/0000-0002-0024-5046](https://orcid.org/0000-0002-0024-5046)

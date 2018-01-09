@@ -98,12 +98,13 @@ The created image contains the runtime environment of the workflow (R, Jupyter N
 
 1. Create a [Local build](#local-build) and start a [Local execution](#local-execution) without mounting the local files
 1. Make sure the R Markdown document renders correctly with `online <- FALSE`, then set `online <- TRUE`
-1. Render the R Markdown document
+1. Render the R Markdown document to HTML
 1. Commit all changes to the repository
 1. Add a tag `v1` to the repository and push it to GitHub
+1. Make sure the hash in the HTML file is the one with the version tag
 1. Create a [Local build](#local-build) (to have the latest commit and tag in the repository)
 1. [Export runtime]("#export-runtime")
-1. Create ZIP file with ``
+1. Create ZIP file with `zip -r sensebox-binder.zip .git data .dockerignore .gitignore .travis.yml 320px-Fireworks_2.jpg Dockerfile install.R LICENSE README.md sensebox-analysis.* sensebox-binder.Rproj sensebox-binder.tar.gz`
 1. Upload to Zenodo, adding the same version tag
 
 ## Contact

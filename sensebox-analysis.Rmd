@@ -48,6 +48,7 @@ library("leaflet")
 library("readr")
 library("jsonlite")
 library("here")
+library("maps")
 ```
 
 <span style="color: grey;">[output hidden]</span>
@@ -65,8 +66,7 @@ if(online) {
   pm25_boxes <- osem_boxes(
     exposure = 'outdoor',
     date = analysis_date, # ±4 hours
-    phenomenon = 'PM2.5',
-    model = "homeWifiFeinstaub" # redundant because of phenomenon
+    phenomenon = 'PM2.5'
   )
   
   # update local data
@@ -102,7 +102,7 @@ knitr::kable(data.frame(nrow(all_boxes), nrow(pm25_boxes)),
 
 The openSenseMap currently provides access to `r nrow(all_boxes)` senseBoxes of which `r nrow(pm25_boxes)` provide measurements of [PM2.5](https://www.umweltbundesamt.de/sites/default/files/medien/377/dokumente/infoblatt_feinstaub_pm2_5_en.pdf) around `r format(analysis_date, "%Y-%m-%d %T %Z")`.
 
-The following map shows the PM2.5 sensor locations.
+The following map shows the PM2.5 sensor locations, which are mostly deployed in central Europe.
 
 ```{r plot_outdoor_feinstaub}
 plot(pm25_boxes)
@@ -121,21 +121,43 @@ pm25_boxes_sf <- st_as_sf(pm25_boxes, remove = FALSE, agr = "identity")
 names(pm25_boxes_sf) <- c(names(pm25_boxes), "geometry")
 
 pm25_boxes_sf <- cbind(pm25_boxes_sf, dist_to_ms = st_distance(ms, pm25_boxes_sf))
-max_dist <- set_units(3, km) # km from city center
+max_dist <- set_units(7, km) # km from city center
 
 ms_boxes <- pm25_boxes_sf[pm25_boxes_sf$dist_to_ms < max_dist,c("X_id", "name")]
-class(ms_boxes) <- c(class(ms_boxes), "sensebox")
 ms_boxes
+```
+
+_Where are the sensors in Münster?_ <span style="color: grey;">[Does not work in Jupyter Notebook]</span>
+
+```{r muenster_plot_map}
+sense_icon <- awesomeIcons(
+  icon = 'cube',
+  iconColor = '#ffffff',
+  library = 'fa',
+  markerColor = 'green'
+)
+
+leaflet() %>% 
+  addTiles() %>%
+  addAwesomeMarkers(data = ms_boxes,
+             popup = ~paste0("<b>Name:</b> ", name, "<br><b>Id:</b> ", 
+                             "<a href='https://opensensemap.org/explore/", X_id, "' ",
+                             "target='_blank'>", X_id, "</a>"),
+             label = ~name,
+             icon = sense_icon)
 ```
 
 Now we retrieve data for `r nrow(ms_boxes)` senseBoxes with values in the area of interest.
 
 ```{r muenster_data}
 if(online) {
-  ms_data <- osem_measurements(ms_boxes, phenomenon = "PM2.5", 
+  class(ms_boxes) <- c("sensebox", class(ms_boxes))
+  ms_data <- osem_measurements(ms_boxes, phenomenon = "PM2.5",
                              from = lubridate::as_datetime("2017-12-31 20:00:00"),
-                             to = lubridate::as_datetime("2018-01-01 04:00:00"))
-  
+                             to = lubridate::as_datetime("2018-01-01 04:00:00"),
+                             columns = c("value", "createdAt", "lat", "lon", "boxId",
+                                         "boxName", "exposure", "sensorId",
+                                         "phenomenon", "unit", "sensorType"))
   # update local data
   data_json <- toJSON(ms_data, digits = NA, pretty = TRUE)
   write(data_json, file = here("data/ms_data.json"))
@@ -146,16 +168,16 @@ if(online) {
                                   col_types = cols(
                                     sensorId = col_factor(levels = NULL),
                                     unit = col_factor(levels = NULL)))
-  class(all_boxes) <- c("sensebox", class(ms_data))
+  class(ms_data) <- c("sensebox", class(ms_data))
 }
 
 summary(ms_data %>% 
-                select(value,createdAt,sensorId,unit))
+                select(value,sensorId,unit))
 ```
 
 We can now plot `r nrow(ms_data)` measurements.
 
-```{r muenster_plot}
+```{r muenster_plot_timeseries}
 plot(value~createdAt, ms_data, 
      type = "p", pch = '*', cex = 2, # new year's style
      col = factor(ms_data$sensorId), 
@@ -169,49 +191,62 @@ plot(value~createdAt, ms_data,
 
 You can see, it was a [very "particular" celebration](http://www.dw.com/en/new-years-eve-are-fireworks-harming-the-environment/a-41957523).
 
-_Who is the record holder?_
+_Who are the record holders?_
 
-```{r top_three}
-top_three <- ms_data %>% 
-  arrange(desc(value)) %>% 
-  head(n = 3)
-knitr::kable(x = top_three,
-             caption = "Top 3 measurements")
+```{r top_three_boxes}
+top_measurements <- ms_data %>%
+  arrange(desc(value))
+top_boxes <- top_measurements %>%
+               distinct(sensorId, .keep_all = TRUE)
+knitr::kable(x = top_boxes %>%
+               select(value, createdAt, boxName) %>%
+               head(n = 3),
+             caption = "Top 3 boxes")
 ```
 
 **Note:** The timestamp is UTC and the local time is [CET](https://en.wikipedia.org/wiki/CET) (`UTC+1:00`).
+The value `999.9` is the maximum value measured by the used sensor [SDS011](https://nettigo.pl/attachments/398).
 
-```{r top_box}
-# find the top station by its coordinates
-top_sensor <- ms_data %>% arrange(desc(value)) %>% head(n = 1) %>% .$sensorId
-top_box_coords <- ms_data %>% filter(sensorId == top_sensor) %>% select("lat", "lon") %>% slice(c(1))
-top_box <- all_boxes %>% filter(lon == top_box_coords$lon, lat == top_box_coords$lat)
-
-knitr::kable(data.frame(top_sensor, top_box$name),
+```{r top_boxes}
+knitr::kable(top_boxes %>% filter(value == max(top_boxes$value)) %>%
+               select(sensorId, boxName),
              col.names = c("Top sensor identifier", "Top box name"))
 ```
 
-Congratulations (?) to sensor _`r top_sensor`_ at box **`r top_box$name`** for holding the record values just after the new year started.
+Congratulations (?) to boxes for holding the record values just after the new year started.
 
-_Where is the record holding box?_
+_Where are the record holding boxes?_
 
-**Static plot**:
+**Static plot**
 
 ```{r top_box_plot}
-plot(top_box)
+top_boxes_sf <- top_boxes %>% filter(value == max(top_boxes$value)) %>%
+  st_as_sf(coords = c('lon', 'lat'), crs = 4326)
+bbox <- sf::st_bbox(top_boxes_sf)
+
+world <- map("world", plot = FALSE, fill = TRUE) %>%
+  sf::st_as_sf() %>%
+  sf::st_geometry()
+
+plot(world,
+     xlim = round(bbox[c(1,3)], digits = 1),
+     ylim = round(bbox[c(2,4)], digits = 1),
+     axes = TRUE, las = 1)
+plot(top_boxes_sf, add = TRUE, col = "red", cex = 2)
+title("senseBox stations in Münster with highest PM2.5 measurements")
 ```
 
-**Interactive map** <span style="color: grey;">[Does not work in Jupyter Notebook]</span>:
+**Interactive map** 
 
 ```{r top_box_map}
 fireworks_icon <- makeIcon(
   # icon source: https://commons.wikimedia.org/wiki/File:Fireworks_2.png
-  iconUrl = "320px-Fireworks_2.png",
-  iconWidth = 160, iconHeight = 94)
+  iconUrl = "320px-Fireworks_2.png", iconWidth = 160)
 
-leaflet(data = top_box) %>% 
+leaflet(data = top_boxes_sf) %>% 
   addTiles() %>%
-  addMarkers(~lon, ~lat, popup = ~as.character(name), label = ~as.character(name),
+  addMarkers(popup = ~as.character(boxName),
+             label = ~as.character(boxName),
              icon = fireworks_icon)
 ```
 

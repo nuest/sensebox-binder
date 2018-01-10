@@ -19,7 +19,7 @@ This repo can be opened directly in [Binder](https://mybinder.org/) thanks to [t
 ## Local build
 
 The following commands build a Docker image from the `Dockerfile` and the runs it on your local machine.
-Therefor you need [Docker](http://docker.com/).
+Therefore you need [Docker](http://docker.com/).
 The steps are roughly what happens when launching this repository in Binder.
 
 ```bash
@@ -60,6 +60,14 @@ You may leave out the mount, but changes are not persisted to the host machine t
 The output includes a login link to the Jupyter Notebook start page, similar to `http://0.0.0.0:8888/?token=bd3fc8b1176293170965e7ce613f5fbfd7a64733f312c34a` but with a different token.
 Open this link in your browser and continue with [Open analysis](#open-analysis).
 
+### Troubleshooting
+
+If you encounter file permission errors, such as `PermissionError: [Errno 13] Permission denied: '/home/rstudio/.local'` when starting the container, try to explicitly set the container user ID to the required default user `rstudio` with `UID` of `1000`.
+
+```bash
+docker run -it -p 8888:8888 --user=1000 sensebinder
+```
+
 ## Open analysis
 
 The **main workflow** is available both as an [R Markdown](http://rmarkdown.rstudio.com/) document (primary) and a [Jupyter Notebook](https://nbformat.readthedocs.io/en/latest/) (automatic conversion) using an R kernel.
@@ -97,14 +105,14 @@ The created image contains the runtime environment of the workflow (R, Jupyter N
 ## Create release
 
 1. Create a [Local build](#local-build) and start a [Local execution](#local-execution) without mounting the local files
-1. Make sure the R Markdown document renders correctly with `online <- FALSE`, then set `online <- TRUE`
-1. Commit all changes to the repository
-1. Add a tag `v1` to the repository and push it to GitHub
+1. Make sure the R Markdown document renders correctly with `online <- FALSE` in the code chunk `load_box_data`, then set `online <- TRUE` again and re-render
+1. Commit all changes to the git repository
+1. Add a tag `v1` to the current git commit and push the tag to GitHub
 1. Start a [Local execution](#local-execution) with mounting the local files to render the R Markdown document to HTML;make sure the hash in the HTML file is the one with the version tag
-1. Create a [Local build](#local-build) (to have the latest commit and tag in the repository)
+1. Create a [Local build](#local-build) (to have the latest commit and tag in the local git repository)
 1. [Export runtime]("#export-runtime")
 1. Create ZIP file with `zip -1 -r sensebox-binder.zip .git data .dockerignore .gitignore .travis.yml 320px-Fireworks_2.jpg Dockerfile install.R LICENSE README.md sensebox-analysis.* sensebox-binder.Rproj sensebox-binder.tar.gz` (fast compression, the tarball is already compressed and the other file sizes are negligible)
-1. Upload to Zenodo, adding the same version tag
+1. Upload to Zenodo (as a new version), setting the same version tag
 
 ## Contact
 

@@ -1,6 +1,6 @@
 # sensebox-binder
 
-[![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/v2/gh/nuest/sensebox-binder/master) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1135139.svg)](https://doi.org/10.5281/zenodo.1135139)
+[![Binder](http://mybinder.org/badge_logo.svg)](http://mybinder.org/v2/gh/nuest/sensebox-binder/master) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1135139.svg)](https://doi.org/10.5281/zenodo.1135139)
 
 _A reproducible analysis of environmental data - from hardware to plot!_
 
